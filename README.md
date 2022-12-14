@@ -1,6 +1,11 @@
 # python-fastAPI
 Having a look at fastAPI
 
+
+##
+See main.py for operations examples
+
+
 ## Operations
 I have implemented different operations to get used to FastAPI.  The input type of these operations can be constrained by defining a type for example. 
 
