@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from enum import Enum
-from typing import Union
+from typing import Union, List
+from pydantic import BaseModel  # For request body (POST, PUT, PATCH, DELETE
 
 app = FastAPI()
 
@@ -11,6 +12,7 @@ class LanguageEnum(str, Enum):
     javascript = "javascript"
 
 
+################################################## GET OPERATIONS
 # 'Home screen'
 @app.get("/")
 def home_screen():
@@ -92,3 +94,52 @@ async def read_user_item(user_id: int, item_id: str, q: Union[str, None]):
     else:
         item.update({"q": "This was not a query"})
     return item
+
+
+# Constrain query ( => 2 and <= 10 and starts with 'B')
+@app.get("/limitedquery/")
+async def foo(q:Union[str, None] =  Query(default="B_default_query_can_break_size_rule", min_length=2, max_length=10, regex="^B")):
+    results = {"item": "this is an item"}
+    if q:
+        results.update({"query is": q})
+    return results
+
+
+# Query list
+@app.get("/querylist/")
+async def go(q: Union[List[str], None] = Query(default=None)):
+    queryList = {}
+    for i, each in enumerate(q):
+        queryList[f"Query {i}"] = each
+    return queryList
+
+
+################################################## SEND (AS REQUEST BODY) OPERATIONS
+# Base model class
+class Item (BaseModel):
+    name: str
+    description: Union[str, None] = None
+    price: float
+    tax: Union[float, None] = None
+
+
+# create_item expects an item structured like Item class
+# test functionality of POST in /docs
+@app.post("/items/")
+async def create_item(item: Item):
+    item_dict = item.dict()
+    if item.tax:
+        item_dict.update({"Price inc tax": item.price + item.tax})
+    return item_dict
+
+
+# operation that includes REQUEST BODY and PATH and QUERY parameters
+@app.post("/trifector/item_id")
+async def create_item(item_id: int, item: Item, q: Union[str, None] = None):
+    result = {"item_id": item_id, **item.dict()}
+    if q:
+        result.update({"q": q})
+    return result
+
+
+
